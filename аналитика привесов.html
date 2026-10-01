@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>КРС — единый файл с версиями</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #eef2f5; margin: 0; padding: 16px;
+    color: #2c3e50; font-size: 13px;
+  }
+  .container {
+    max-width: 1700px; margin: 0 auto; background: #fff;
+    border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    padding: 18px; overflow-x: auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitle { color: #7f8c8d; font-size: 12px; margin-bottom: 14px; }
+
+  /* ---------- ИНСТРУКЦИЯ ---------- */
+  .instructions {
+    background: linear-gradient(135deg, #eaf4fb, #e8f7f0);
+    border: 1px solid #c9e2f0;
+    border-left: 5px solid #3498db;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .instructions-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(52,152,219,.08);
+  }
+  .instructions-header:hover { background: rgba(52,152,219,.14); }
+  .instructions-header h2 {
+    font-size: 15px; margin: 0; color: #2c3e50;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .instructions-toggle {
+    font-size: 12px; color: #3498db;
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 600;
+  }
+  .instructions-toggle .arrow {
+    transition: transform .25s;
+    display: inline-block;
+  }
+  .instructions.collapsed .instructions-toggle .arrow { transform: rotate(-90deg); }
+  .instructions-body {
+    padding: 4px 18px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .instructions.collapsed .instructions-body { display: none; }
+
+  .ins-block {
+    background: #fff;
+    border-radius: 6px;
+    padding: 12px 14px;
+    border: 1px solid #e3ecf2;
+  }
+  .ins-block h3 {
+    font-size: 13px;
+    margin: 0 0 8px;
+    color: #2c3e50;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ins-block h3 .ic {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #3498db; color: #fff;
+    font-size: 12px; font-weight: 700;
+  }
+  .ins-block h3 .ic.green  { background: #27ae60; }
+  .ins-block h3 .ic.purple { background: #8e44ad; }
+  .ins-block h3 .ic.teal   { background: #16a085; }
+  .ins-block h3 .ic.red    { background: #e74c3c; }
+  .ins-block ol, .ins-block ul { margin: 6px 0 0; padding-left: 20px; line-height: 1.6; }
+  .ins-block li { margin-bottom: 4px; }
+  .ins-block b { color: #2c3e50; }
+  .ins-block code {
+    background: #f0f4f7; padding: 1px 5px;
+    border-radius: 3px; font-size: 12px;
+    color: #c0392b;
+  }
+  .ins-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #ecf0f1; color: #555;
+    margin-left: 4px;
+  }
+  .ins-badge.green  { background: #d5f4e6; color: #1e8449; }
+  .ins-badge.blue   { background: #d6eaf8; color: #1f618d; }
+  .ins-badge.purple { background: #e8daef; color: #6c3483; }
+  .ins-badge.red    { background: #fadbd8; color: #922b21; }
+  .ins-badge.teal   { background: #d1f2eb; color: #117a65; }
+  .ins-badge.gray   { background: #eaeded; color: #566573; }
+
+  .ins-steps {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0 !important;
+  }
+  .ins-steps li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 6px;
+  }
+  .ins-steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #3498db; color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* ---------- /ИНСТРУКЦИЯ ---------- */
+
+  .toolbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 12px; padding: 10px;
+    background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;
+  }
+  button {
+    padding: 8px 14px; border: none; border-radius: 4px;
+    background: #3498db; color: #fff; font-size: 13px;
+    cursor: pointer; transition: .15s;
+  }
+  button:hover { background: #2980b9; }
+  button.secondary { background: #95a5a6; }
+  button.secondary:hover { background: #7f8c8d; }
+  button.danger { background: #e74c3c; }
+  button.danger:hover { background: #c0392b; }
+  button.success { background: #27ae60; }
+  button.success:hover { background: #1e8449; }
+  button.excel { background: #1d6f42; }
+  button.excel:hover { background: #155232; }
+  button.primary { background: #8e44ad; }
+  button.primary:hover { background: #6c3483; }
+  button.import { background: #16a085; }
+  button.import:hover { background: #117a65; }
+
+  .counter {
+    margin-left: auto;
+    font-size: 12px;
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .counter span { color: #8e44ad; }
+
+  table.data { width: 100%; border-collapse: collapse; white-space: nowrap; }
+  table.data thead th {
+    background: #34495e; color: #fff; padding: 6px 4px;
+    text-align: center; font-weight: 600; font-size: 11px;
+    line-height: 1.15; border: 1px solid #2c3e50; vertical-align: middle;
+  }
+  table.data thead th.group-header  { background: #16a085; }
+  table.data thead th.group-header2 { background: #2980b9; }
+  table.data tbody td { border: 1px solid #e0e0e0; padding: 3px 2px; text-align: center; }
+  table.data tbody tr:nth-child(even) { background: #f9fbfc; }
+  table.data tbody tr:hover { background: #eaf4ff; }
+
+  input.cell, select.cell {
+    width: 100%; border: 1px solid transparent;
+    background: transparent; text-align: center;
+    font-size: 13px; padding: 4px 2px; font-family: inherit;
+    color: #2c3e50; border-radius: 3px;
+  }
+  input.cell:hover { background: #f0f0f0; }
+  input.cell:focus, select.cell:focus {
+    outline: none; border-color: #3498db;
+    background: #fff; box-shadow: 0 0 0 2px rgba(52,152,219,.2);
+  }
+  input[type="date"].cell { text-align: left; font-size: 12px; }
+  input[type="number"].cell { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .calc { font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; color: #7f8c8d; }
+  .calc.good { color: #27ae60; }
+  .calc.warn { color: #e67e22; }
+  .calc.bad  { color: #e74c3c; }
+  .calc.neutral { color: #7f8c8d; }
+
+  .actions-cell button { padding: 3px 8px; font-size: 12px; line-height: 1; }
+
+  .empty-hint {
+    text-align: center;
+    color: #95a5a6;
+    padding: 30px 10px;
+    font-size: 13px;
+    font-style: italic;
+    border: 1px dashed #d0d7dd;
+    border-radius: 6px;
+    margin: 10px 0;
+  }
+
+  .summary {
+    margin-top: 18px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .card {
+    background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
+    border-left: 4px solid #3498db; border-radius: 6px; padding: 10px 12px;
+  }
+  .card .label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .3px; }
+  .card .value { font-size: 20px; font-weight: 700; color: #2c3e50; margin-top: 2px; }
+  .card .unit  { font-size: 12px; color: #777; font-weight: 400; }
+  .card.green  { border-left-color: #27ae60; }
+  .card.orange { border-left-color: #e67e22; }
+  .card.red    { border-left-color: #e74c3c; }
+  .card.purple { border-left-color: #8e44ad; }
+
+  .hint { font-size: 12px; color: #777; margin-top: 12px; line-height: 1.5; }
+
+  .versions-panel {
+    margin-top: 20px;
+    border-top: 2px solid #ecf0f1;
+    padding-top: 14px;
+  }
+  .versions-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; flex-wrap: wrap; gap: 10px;
+  }
+  .versions-header h2 { font-size: 15px; margin: 0; color: #2c3e50; }
+  .versions-header .info { font-size: 12px; color: #7f8c8d; }
+
+  .versions-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .version-card {
+    background: #f8f9fa; border: 1px solid #e9ecef;
+    border-radius: 6px; padding: 10px 12px;
+    border-left: 4px solid #8e44ad;
+    transition: .15s;
+  }
+  .version-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .version-card .vname { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .version-card .vmeta { font-size: 11px; color: #7f8c8d; margin-bottom: 8px; }
+  .version-card .vactions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .version-card button { padding: 4px 10px; font-size: 11px; border-radius: 3px; }
+
+  #toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #27ae60; color: #fff;
+    padding: 12px 20px; border-radius: 6px;
+    font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    transform: translateY(20px);
+    z-index: 1000;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.error { background: #e74c3c; }
+  #toast.warn  { background: #e67e22; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ================== ИНСТРУКЦИЯ ================== -->
+  <div class="instructions" id="instructions">
+    <div class="instructions-header" onclick="toggleInstructions()">
+      <h2>📖 Инструкция по работе с формой</h2>
+      <span class="instructions-toggle">
+        <span class="arrow">▼</span>
+        <span id="instrToggleText">Свернуть</span>
+      </span>
+    </div>
+
+    <div class="instructions-body">
+
+      <div class="ins-block">
+        <h3><span class="ic">1</span> Как вести учёт</h3>
+        <ol class="ins-steps">
+          <li>Нажмите <b>«➕ Добавить теленка»</b> — появится пустая строка.</li>
+          <li>Заполните поля: <b>инд. №</b>, <b>пол</b> (б/т), <b>дата рождения</b>, <b>вес при рождении</b>.</li>
+          <li>Внесите <b>дату и вес первого взвешивания</b> — привес, кормодни и среднесуточный привес посчитаются сами.</li>
+          <li>Аналогично заполните <b>второе взвешивание</b>.</li>
+          <li>При необходимости укажите <b>телятник</b> и <b>телятницу</b>.</li>
+        </ol>
+        <p style="margin:8px 0 0;font-size:12px;color:#7f8c8d;">
+          💡 <b>Данные сохраняются автоматически</b> в браузере — можно закрыть страницу и вернуться позже.
+        </p>
+      </div>
+
+      <div class="ins-block">
+        <h3><span class="ic green">2</span> Как считаются показатели</h3>
+        <ul>
+          <li><b>Привес 1</b> = Вес 1 − Вес при рождении</li>
+          <li><b>Кормодней 1</b> = Дата 1 − Дата рождения (в днях)</li>
+          <li><b>Ср.сут.привес 1</b> = Привес 1 ÷ Кормодней 1</li>
+          <li><b>Привес 2</b> = Вес 2 − Вес 1</li>
+          <li><b>Кормодней 2</b> = Дата 2 − Дата 1</li>
+          <li><b>Ср.сут.привес 2</b> = Привес 2 ÷ Кормодней 2</li>
+        </ul>
+        <p style="margin:8px 0 0;font-size:12px;color:#7f8c8d;">
+          🎨 Цвет среднесуточного привеса:
+          <span class="ins-badge green">≥ 0,8 кг/сут</span>
+          <span class="ins-badge" style="background:#fdebd0;color:#a04000;">0,5–0,8</span>
+          <span class="ins-badge red">&lt; 0,5</span>
+        </p>
+      </div>
+
+      <div class="ins-block">
+        <h3><span class="ic purple">3</span> Версии и история</h3>
+        <ol class="ins-steps">
+          <li>Кнопка <b>«💾 Сохранить версию»</b> — создаёт снимок таблицы с вашим названием (например, «Октябрь 2026»).</li>
+          <li>Все версии отображаются в блоке <b>«📚 Сохранённые версии»</b> внизу страницы.</li>
+          <li>У каждой версии есть 4 действия:
+            <ul style="margin:4px 0;">
+              <li><span class="ins-badge green">↻ Загрузить</span> — вернуть её в текущую таблицу</li>
+              <li><span class="ins-badge green">📊 Excel</span> — скачать только эту версию</li>
+              <li><span class="ins-badge gray">↓ JSON</span> — скачать версию отдельным файлом</li>
+              <li><span class="ins-badge red">×</span> — удалить версию</li>
+            </ul>
+          </li>
+          <li>Хранится до <b>30 последних версий</b>.</li>
+        </ol>
+      </div>
+
+      <div class="ins-block">
+        <h3><span class="ic teal">4</span> Единый файл (.krscat.json)</h3>
+        <ol class="ins-steps">
+          <li><b>«📦 Скачать единый файл»</b> — забрать <u>всё сразу</u>: текущую таблицу <b>и все версии</b> в один файл.</li>
+          <li><b>«📂 Открыть файл»</b> — восстановить из него данные на этом или другом компьютере.</li>
+          <li>При открытии спросит:
+            <ul style="margin:4px 0;">
+              <li><b>ОК</b> — заменить всё (текущую таблицу и версии)</li>
+              <li><b>Отмена</b> — загрузить только таблицу, версии не трогать</li>
+            </ul>
+          </li>
+        </ol>
+        <p style="margin:8px 0 0;font-size:12px;color:#7f8c8d;">
+          📁 Это и есть <b>резервная копия</b>. Храните её отдельно от браузера.
+        </p>
+      </div>
+
+      <div class="ins-block">
+        <h3><span class="ic" style="background:#1d6f42;">5</span> Выгрузка в Excel</h3>
+        <ul>
+          <li><b>«📊 Excel (всё)»</b> — один <code>.xlsx</code> со всем содержимым:</li>
+          <ul style="margin:4px 0;">
+            <li>лист <b>«Привесы»</b> — текущая таблица (с автофильтром)</li>
+            <li>лист <b>«Сводка»</b> — средние показатели по стаду</li>
+            <li>лист <b>«Версии»</b> — реестр: № / название / дата / голов</li>
+            <li>отдельный лист на каждую версию (до 10)</li>
+          </ul>
+          <li><b>«📥 CSV»</b> — облегчённый формат, если нет интернета.</li>
+        </ul>
+      </div>
+
+      <div class="ins-block">
+        <h3><span class="ic red">6</span> Важно знать</h3>
+        <ul>
+          <li>Автосохранение привязано к <b>браузеру и устройству</b>. Для переноса — используйте <b>единый файл</b>.</li>
+          <li>Очистка кэша браузера <b>удалит</b> автосохранение и версии — <b>регулярно скачивайте единый файл</b>.</li>
+          <li>Кнопка <b>«🗑 Очистить»</b> удаляет только <u>текущую таблицу</u>, сохранённые версии остаются.</li>
+          <li>Excel-библиотека подгружается из интернета. Если её нет — работайте с CSV или сохраняйте единый файл.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+  <!-- ================== /ИНСТРУКЦИЯ ================== -->
+
+  <h1>🐄 КРС — единый файл со всеми версиями</h1>
+  <div class="subtitle">
+    Один файл <code>.krscat.json</code> содержит: текущую таблицу + все сохранённые версии.
+  </div>
+
+  <div class="toolbar">
+    <button onclick="addRow()">➕ Добавить теленка</button>
+    <button class="primary" onclick="saveVersion()">💾 Сохранить версию</button>
+    <button class="success" onclick="exportFullFile()">📦 Скачать единый файл</button>
+    <button class="import" onclick="document.getElementById('fileInput').click()">📂 Открыть файл</button>
+    <button class="excel" onclick="exportExcelFull()">📊 Excel (всё)</button>
+    <button class="secondary" onclick="exportCSV()">📥 CSV</button>
+    <button class="danger" onclick="clearAll()">🗑 Очистить</button>
+    <input type="file" id="fileInput" accept=".krscat,.json,application/json" hidden>
+    <div class="counter">Голов: <span id="cntRows">0</span> • Версий: <span id="cntVers">0</span></div>
+  </div>
+
+  <table class="data" id="mainTable">
+    <thead>
+      <tr>
+        <th rowspan="2">№</th>
+        <th rowspan="2">Инд. №</th>
+        <th rowspan="2">Пол<br>теленка</th>
+        <th rowspan="2">Дата<br>рождения</th>
+        <th rowspan="2">Вес при<br>рождении, кг</th>
+        <th colspan="5" class="group-header">Взвешивание 1</th>
+        <th colspan="5" class="group-header2">Взвешивание 2</th>
+        <th rowspan="2">Телятник</th>
+        <th rowspan="2">Телятница</th>
+        <th rowspan="2"></th>
+      </tr>
+      <tr>
+        <th>Дата</th>
+        <th>Вес, кг</th>
+        <th>Привес, кг</th>
+        <th>Кормодней</th>
+        <th>Ср.сут.<br>привес, кг</th>
+        <th>Дата</th>
+        <th>Вес, кг</th>
+        <th>Привес, кг</th>
+        <th>Кормодней</th>
+        <th>Ср.сут.<br>привес, кг</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div id="emptyHint" class="empty-hint">
+    Таблица пуста. Нажмите «➕ Добавить теленка», чтобы начать, или «📂 Открыть файл», чтобы загрузить ранее сохранённые данные.
+  </div>
+
+  <div class="summary">
+    <div class="card green"><div class="label">Всего голов</div><div class="value" id="sumCount">0</div></div>
+    <div class="card"><div class="label">Средний вес при рожд.</div><div class="value"><span id="sumBirthW">—</span> <span class="unit">кг</span></div></div>
+    <div class="card orange"><div class="label">Средний вес (взв.1)</div><div class="value"><span id="sumW1">—</span> <span class="unit">кг</span></div></div>
+    <div class="card orange"><div class="label">Средний вес (взв.2)</div><div class="value"><span id="sumW2">—</span> <span class="unit">кг</span></div></div>
+    <div class="card green"><div class="label">Ср. сут. привес (взв.1)</div><div class="value"><span id="sumAdg1">—</span> <span class="unit">кг/сут</span></div></div>
+    <div class="card green"><div class="label">Ср. сут. привес (взв.2)</div><div class="value"><span id="sumAdg2">—</span> <span class="unit">кг/сут</span></div></div>
+    <div class="card red"><div class="label">Общий прирост (от рожд.)</div><div class="value"><span id="sumTotal">—</span> <span class="unit">кг</span></div></div>
+    <div class="card purple"><div class="label">Последнее сохранение</div><div class="value" style="font-size:14px;" id="lastSave">—</div></div>
+  </div>
+
+  <div class="versions-panel">
+    <div class="versions-header">
+      <h2>📚 Сохранённые версии</h2>
+      <span class="info" id="versionsInfo">—</span>
+    </div>
+    <div class="versions-list" id="versionsList"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+/* =========================================================
+   ИНСТРУКЦИЯ — свёртывание
+   ========================================================= */
+const LS_INSTR = 'krs_instructions_collapsed_v1';
+function toggleInstructions() {
+  const el = document.getElementById('instructions');
+  const txt = document.getElementById('instrToggleText');
+  el.classList.toggle('collapsed');
+  const collapsed = el.classList.contains('collapsed');
+  txt.textContent = collapsed ? 'Развернуть' : 'Свернуть';
+  try { localStorage.setItem(LS_INSTR, collapsed ? '1' : '0'); } catch (e) {}
+}
+(function initInstructions() {
+  try {
+    if (localStorage.getItem(LS_INSTR) === '1') {
+      document.getElementById('instructions').classList.add('collapsed');
+      document.getElementById('instrToggleText').textContent = 'Развернуть';
+    }
+  } catch (e) {}
+})();
+
+/* =========================================================
+   КОНСТАНТЫ
+   ========================================================= */
+const APP_FORMAT  = 'krs-cattle-tracker';
+const APP_SCHEMA  = 1;
+const APP_VERSION = '1.1';
+const FILE_EXT    = '.krscat.json';
+
+const LS_CURRENT  = 'krs_current_session_v2';
+const LS_VERSIONS = 'krs_saved_versions_v1';
+const MAX_VERSIONS = 30;
+
+/* =========================================================
+   УТИЛИТЫ
+   ========================================================= */
+const tbody = document.getElementById('tbody');
+
+function num(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+function daysBetween(d1, d2) {
+  if (!d1 || !d2) return null;
+  const a = new Date(d1), b = new Date(d2);
+  if (isNaN(a) || isNaN(b)) return null;
+  const diff = Math.round((b - a) / 86400000);
+  return diff >= 0 ? diff : null;
+}
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 2400);
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}.${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+function fileStamp() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function safeSheetName(name) {
+  return String(name).replace(/[\\\/\?\*\[\]:]/g, '_').slice(0, 31) || 'Лист';
+}
+function updateEmptyHint() {
+  const hint = document.getElementById('emptyHint');
+  hint.style.display = tbody.children.length ? 'none' : 'block';
+}
+
+/* =========================================================
+   ЗАПИСЬ ЗНАЧЕНИЙ
+   ========================================================= */
+function setStateClass(el, state) {
+  el.classList.remove('good', 'warn', 'bad', 'neutral');
+  el.classList.add(state);
+}
+function writeCalc(el, val, decimals, state) {
+  if (!el) return;
+  if (val === null || val === undefined || isNaN(val)) {
+    el.textContent = '—'; setStateClass(el, 'neutral');
+  } else {
+    el.textContent = val.toFixed(decimals);
+    setStateClass(el, state || 'neutral');
+  }
+}
+function writeAdg(el, val) {
+  if (!el) return;
+  if (val === null || val === undefined || isNaN(val)) {
+    el.textContent = '—'; setStateClass(el, 'neutral');
+  } else {
+    el.textContent = val.toFixed(3);
+    let s = 'bad';
+    if (val >= 0.8) s = 'good'; else if (val >= 0.5) s = 'warn';
+    setStateClass(el, s);
+  }
+}
+
+/* =========================================================
+   СТРОКА
+   ========================================================= */
+function addRow(data = {}, silent = false) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="num"></td>
+    <td><input class="cell" data-f="inv" value="${data.inv ?? ''}" placeholder="—"></td>
+    <td>
+      <select class="cell" data-f="sex">
+        <option value="б" ${data.sex === 'б' ? 'selected' : ''}>б</option>
+        <option value="т" ${data.sex === 'т' ? 'selected' : ''}>т</option>
+      </select>
+    </td>
+    <td><input class="cell" type="date" data-f="birth" value="${data.birth ?? ''}"></td>
+    <td><input class="cell" type="number" step="0.1" data-f="birthW" value="${data.birthW ?? ''}" placeholder="—"></td>
+    <td><input class="cell" type="date" data-f="d1" value="${data.d1 ?? ''}"></td>
+    <td><input class="cell" type="number" step="0.1" data-f="w1" value="${data.w1 ?? ''}" placeholder="—"></td>
+    <td class="calc g1 neutral">—</td>
+    <td class="calc days1 neutral">—</td>
+    <td class="calc adg1 neutral">—</td>
+    <td><input class="cell" type="date" data-f="d2" value="${data.d2 ?? ''}"></td>
+    <td><input class="cell" type="number" step="0.1" data-f="w2" value="${data.w2 ?? ''}" placeholder="—"></td>
+    <td class="calc g2 neutral">—</td>
+    <td class="calc days2 neutral">—</td>
+    <td class="calc adg2 neutral">—</td>
+    <td><input class="cell" data-f="shed" value="${data.shed ?? ''}" placeholder="—"></td>
+    <td><input class="cell" data-f="worker" value="${data.worker ?? ''}" placeholder="—"></td>
+    <td class="actions-cell">
+      <button type="button" title="Удалить строку" onclick="removeRow(this)">×</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  recalcRow(tr);
+  renumber();
+  if (!silent) { updateSummary(); autosave(); }
+  updateEmptyHint();
+}
+function removeRow(btn) {
+  btn.closest('tr').remove();
+  renumber();
+  updateSummary();
+  autosave();
+  updateEmptyHint();
+}
+function renumber() {
+  [...tbody.children].forEach((tr, i) => {
+    tr.querySelector('.num').textContent = i + 1;
+  });
+}
+
+/* =========================================================
+   РАСЧЁТ
+   ========================================================= */
+function recalcRow(tr) {
+  const get = f => {
+    const el = tr.querySelector(`[data-f="${f}"]`);
+    return el ? el.value : '';
+  };
+  const birthW = num(get('birthW'));
+  const birth = get('birth');
+  const d1 = get('d1'); const w1 = num(get('w1'));
+  const d2 = get('d2'); const w2 = num(get('w2'));
+
+  const gain1 = (w1 !== null && birthW !== null) ? (w1 - birthW) : null;
+  const days1 = (d1 && birth) ? daysBetween(birth, d1) : null;
+  const adg1  = (gain1 !== null && days1 && days1 > 0) ? (gain1 / days1) : null;
+
+  const gain2 = (w2 !== null && w1 !== null) ? (w2 - w1) : null;
+  const days2 = (d2 && d1) ? daysBetween(d1, d2) : null;
+  const adg2  = (gain2 !== null && days2 && days2 > 0) ? (gain2 / days2) : null;
+
+  writeCalc(tr.querySelector('.g1'),    gain1, 0, (gain1 !== null && gain1 < 0) ? 'bad' : 'good');
+  writeCalc(tr.querySelector('.days1'), days1, 0, 'neutral');
+  writeAdg (tr.querySelector('.adg1'),  adg1);
+  writeCalc(tr.querySelector('.g2'),    gain2, 0, (gain2 !== null && gain2 < 0) ? 'bad' : 'good');
+  writeCalc(tr.querySelector('.days2'), days2, 0, 'neutral');
+  writeAdg (tr.querySelector('.adg2'),  adg2);
+}
+
+function updateSummary() {
+  const rows = [...tbody.children];
+  let count = 0;
+  let sBirth=0,nBirth=0, sW1=0,nW1=0, sW2=0,nW2=0;
+  let sAdg1=0,nAdg1=0, sAdg2=0,nAdg2=0, sTotal=0,nTotal=0;
+
+  rows.forEach(tr => {
+    const get = f => tr.querySelector(`[data-f="${f}"]`).value;
+    const birthW = num(get('birthW'));
+    const w1 = num(get('w1'));
+    const w2 = num(get('w2'));
+    count++;
+    if (birthW !== null) { sBirth += birthW; nBirth++; }
+    if (w1 !== null)     { sW1 += w1; nW1++; }
+    if (w2 !== null)     { sW2 += w2; nW2++; }
+    const a1 = parseFloat(tr.querySelector('.adg1').textContent);
+    if (!isNaN(a1)) { sAdg1 += a1; nAdg1++; }
+    const a2 = parseFloat(tr.querySelector('.adg2').textContent);
+    if (!isNaN(a2)) { sAdg2 += a2; nAdg2++; }
+    if (w2 !== null && birthW !== null) { sTotal += (w2 - birthW); nTotal++; }
+  });
+
+  document.getElementById('sumCount').textContent  = count;
+  document.getElementById('sumBirthW').textContent = nBirth ? (sBirth / nBirth).toFixed(1) : '—';
+  document.getElementById('sumW1').textContent     = nW1 ? (sW1 / nW1).toFixed(1) : '—';
+  document.getElementById('sumW2').textContent     = nW2 ? (sW2 / nW2).toFixed(1) : '—';
+  document.getElementById('sumAdg1').textContent   = nAdg1 ? (sAdg1 / nAdg1).toFixed(3) : '—';
+  document.getElementById('sumAdg2').textContent   = nAdg2 ? (sAdg2 / nAdg2).toFixed(3) : '—';
+  document.getElementById('sumTotal').textContent  = nTotal ? (sTotal / nTotal).toFixed(1) : '—';
+
+  document.getElementById('cntRows').textContent = count;
+  document.getElementById('cntVers').textContent = getVersions().length;
+  updateEmptyHint();
+}
+
+/* =========================================================
+   ДЕЛЕГИРОВАНИЕ СОБЫТИЙ
+   ========================================================= */
+tbody.addEventListener('input', e => {
+  const tr = e.target.closest('tr');
+  if (tr) { recalcRow(tr); updateSummary(); autosave(); }
+});
+tbody.addEventListener('change', e => {
+  const tr = e.target.closest('tr');
+  if (tr) { recalcRow(tr); updateSummary(); autosave(); }
+});
+
+/* =========================================================
+   СЕРИАЛИЗАЦИЯ
+   ========================================================= */
+function serialize() {
+  return [...tbody.children].map(tr => {
+    const get = f => tr.querySelector(`[data-f="${f}"]`).value;
+    return {
+      inv: get('inv'), sex: get('sex'), birth: get('birth'), birthW: get('birthW'),
+      d1: get('d1'), w1: get('w1'),
+      d2: get('d2'), w2: get('w2'),
+      shed: get('shed'), worker: get('worker')
+    };
+  });
+}
+function deserialize(data) {
+  tbody.innerHTML = '';
+  if (!Array.isArray(data)) data = [];
+  data.forEach(row => addRow(row, true));
+  renumber();
+  [...tbody.children].forEach(recalcRow);
+  updateSummary();
+}
+
+/* =========================================================
+   АВТОСОХРАНЕНИЕ
+   ========================================================= */
+let autosaveTimer = null;
+function autosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(LS_CURRENT, JSON.stringify({ ts: Date.now(), rows: serialize() }));
+      document.getElementById('lastSave').textContent = formatDate(new Date().toISOString());
+    } catch (e) { console.warn('Autosave failed', e); }
+  }, 400);
+}
+function loadAutosave() {
+  try {
+    const raw = localStorage.getItem(LS_CURRENT);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (p && Array.isArray(p.rows)) {
+      deserialize(p.rows);
+      if (p.ts) document.getElementById('lastSave').textContent = formatDate(new Date(p.ts).toISOString());
+      return true;
+    }
+  } catch (e) { console.warn(e); }
+  return false;
+}
+
+/* =========================================================
+   ВЕРСИИ
+   ========================================================= */
+function getVersions() {
+  try { return JSON.parse(localStorage.getItem(LS_VERSIONS) || '[]'); }
+  catch (e) { return []; }
+}
+function setVersions(v) {
+  localStorage.setItem(LS_VERSIONS, JSON.stringify(v));
+  document.getElementById('cntVers').textContent = v.length;
+}
+
+function saveVersion() {
+  const rows = serialize();
+  if (!rows.length) return toast('Нет данных для сохранения', 'warn');
+
+  const defaultName = 'Версия ' + formatDate(new Date().toISOString());
+  const name = prompt('Название версии:', defaultName);
+  if (name === null) return;
+
+  const versions = getVersions();
+  versions.unshift({
+    id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    name: (name || defaultName).trim() || defaultName,
+    ts: Date.now(),
+    rows
+  });
+  while (versions.length > MAX_VERSIONS) versions.pop();
+
+  try {
+    setVersions(versions);
+    renderVersions();
+    toast('Версия сохранена');
+  } catch (e) {
+    toast('Ошибка: переполнено хранилище', 'error');
+  }
+}
+
+function loadVersion(id) {
+  const v = getVersions().find(x => x.id === id);
+  if (!v) return;
+  if (!confirm(`Загрузить версию «${v.name}»?\nТекущая несохранённая таблица будет заменена.`)) return;
+  deserialize(v.rows);
+  autosave();
+  toast('Версия загружена');
+}
+
+function deleteVersion(id) {
+  const versions = getVersions();
+  const v = versions.find(x => x.id === id);
+  if (!v) return;
+  if (!confirm(`Удалить версию «${v.name}»?`)) return;
+  setVersions(versions.filter(x => x.id !== id));
+  renderVersions();
+  toast('Версия удалена', 'warn');
+}
+
+function downloadVersionJSON(id) {
+  const v = getVersions().find(x => x.id === id);
+  if (!v) return;
+  const data = {
+    format: APP_FORMAT, schema: APP_SCHEMA,
+    app: 'КРС — единый файл со всеми версиями',
+    exported: new Date().toISOString(),
+    current: { ts: v.ts, rows: v.rows },
+    versions: []
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `krs_${v.name.replace(/[^\wа-яА-ЯёЁ\- ]/g, '_')}${FILE_EXT}`;
+  a.click();
+}
+
+function downloadVersionExcel(id) {
+  const v = getVersions().find(x => x.id === id);
+  if (!v) return;
+  if (typeof XLSX === 'undefined') return toast('Excel-библиотека не загружена', 'error');
+  const wb = XLSX.utils.book_new();
+  const data = rowsToExportData(v.rows);
+  const ws = XLSX.utils.json_to_sheet(data, { header: EXPORT_HEADERS });
+  ws['!cols'] = EXPORT_COLS;
+  XLSX.utils.book_append_sheet(wb, ws, safeSheetName(v.name));
+  XLSX.writeFile(wb, `krs_${v.name.replace(/[^\wа-яА-ЯёЁ\- ]/g, '_')}_${fileStamp()}.xlsx`, { compression: true });
+}
+
+function renderVersions() {
+  const list = document.getElementById('versionsList');
+  const info = document.getElementById('versionsInfo');
+  const versions = getVersions();
+
+  document.getElementById('cntVers').textContent = versions.length;
+
+  info.textContent = versions.length
+    ? `Всего: ${versions.length} (макс. ${MAX_VERSIONS})`
+    : 'Пока нет сохранённых версий';
+
+  if (!versions.length) {
+    list.innerHTML = '<div style="color:#95a5a6;font-size:12px;padding:8px;">Нажмите «Сохранить версию», чтобы создать снимок таблицы. Все версии попадут в единый файл при экспорте.</div>';
+    return;
+  }
+  list.innerHTML = versions.map(v => `
+    <div class="version-card">
+      <div class="vname">${escapeHtml(v.name)}</div>
+      <div class="vmeta">${formatDate(new Date(v.ts).toISOString())} • ${v.rows.length} голов</div>
+      <div class="vactions">
+        <button class="success" onclick="loadVersion('${v.id}')">↻ Загрузить</button>
+        <button class="excel" onclick="downloadVersionExcel('${v.id}')">📊 Excel</button>
+        <button class="secondary" onclick="downloadVersionJSON('${v.id}')">↓ JSON</button>
+        <button class="danger" onclick="deleteVersion('${v.id}')">×</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* =========================================================
+   ЕДИНЫЙ ФАЙЛ
+   ========================================================= */
+function exportFullFile() {
+  const data = {
+    format: APP_FORMAT, schema: APP_SCHEMA,
+    app: 'КРС — единый файл со всеми версиями',
+    appVersion: APP_VERSION,
+    exported: new Date().toISOString(),
+    current: { ts: Date.now(), rows: serialize() },
+    versions: getVersions()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `krs_единый_${fileStamp()}${FILE_EXT}`;
+  a.click();
+  toast('Единый файл скачан');
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data || data.format !== APP_FORMAT) {
+        return toast('Неверный формат файла', 'error');
+      }
+      const hasCurrent  = data.current && Array.isArray(data.current.rows);
+      const hasVersions = Array.isArray(data.versions);
+
+      if (!hasCurrent && !hasVersions) return toast('Файл пуст', 'warn');
+
+      const replaceAll = confirm(
+        'Найдено в файле:\n' +
+        `— Текущая таблица: ${hasCurrent ? data.current.rows.length : 0} голов\n` +
+        `— Версий: ${hasVersions ? data.versions.length : 0}\n\n` +
+        'ОК — заменить ВСЁ (текущая + версии).\n' +
+        'Отмена — загрузить только текущую таблицу, версии не трогать.'
+      );
+
+      if (hasCurrent) deserialize(data.current.rows);
+      if (replaceAll && hasVersions) {
+        setVersions(data.versions);
+        renderVersions();
+      }
+      autosave();
+      updateSummary();
+      toast('Файл загружен');
+    } catch (err) {
+      toast('Ошибка чтения: ' + err.message, 'error');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(f);
+});
+
+/* =========================================================
+   EXCEL
+   ========================================================= */
+const EXPORT_HEADERS = [
+  '№','Инд. №','Пол','Дата рождения','Вес при рожд., кг',
+  'Дата взв.1','Вес 1, кг','Привес 1, кг','Кормодней 1','Ср.сут.привес 1, кг',
+  'Дата взв.2','Вес 2, кг','Привес 2, кг','Кормодней 2','Ср.сут.привес 2, кг',
+  'Телятник','Телятница'
+];
+const EXPORT_COLS = [
+  {wch:4},{wch:13},{wch:6},{wch:13},{wch:11},
+  {wch:13},{wch:9},{wch:11},{wch:11},{wch:15},
+  {wch:13},{wch:9},{wch:11},{wch:11},{wch:15},
+  {wch:11},{wch:14}
+];
+
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? v : n;
+}
+
+function rowsToExportData(rows) {
+  return rows.map((r, i) => {
+    const birthW = toNum(r.birthW);
+    const w1 = toNum(r.w1);
+    const w2 = toNum(r.w2);
+    const gain1 = (birthW !== null && w1 !== null) ? w1 - birthW : null;
+    const gain2 = (w1 !== null && w2 !== null) ? w2 - w1 : null;
+    const days1 = (r.birth && r.d1) ? daysBetween(r.birth, r.d1) : null;
+    const days2 = (r.d1 && r.d2) ? daysBetween(r.d1, r.d2) : null;
+    const adg1 = (gain1 !== null && days1 && days1 > 0) ? gain1 / days1 : null;
+    const adg2 = (gain2 !== null && days2 && days2 > 0) ? gain2 / days2 : null;
+    return {
+      '№': i + 1,
+      'Инд. №': r.inv || '',
+      'Пол': r.sex || '',
+      'Дата рождения': r.birth || '',
+      'Вес при рожд., кг': birthW,
+      'Дата взв.1': r.d1 || '',
+      'Вес 1, кг': w1,
+      'Привес 1, кг': gain1,
+      'Кормодней 1': days1,
+      'Ср.сут.привес 1, кг': adg1,
+      'Дата взв.2': r.d2 || '',
+      'Вес 2, кг': w2,
+      'Привес 2, кг': gain2,
+      'Кормодней 2': days2,
+      'Ср.сут.привес 2, кг': adg2,
+      'Телятник': r.shed || '',
+      'Телятница': r.worker || ''
+    };
+  });
+}
+
+function buildSummaryArray() {
+  const getTxt = id => document.getElementById(id).textContent;
+  return [
+    { 'Показатель': 'Всего голов',                     'Значение': getTxt('sumCount') },
+    { 'Показатель': 'Средний вес при рождении, кг',    'Значение': getTxt('sumBirthW') },
+    { 'Показатель': 'Средний вес (взвешивание 1), кг', 'Значение': getTxt('sumW1') },
+    { 'Показатель': 'Средний вес (взвешивание 2), кг', 'Значение': getTxt('sumW2') },
+    { 'Показатель': 'Ср. сут. привес (взв.1), кг',     'Значение': getTxt('sumAdg1') },
+    { 'Показатель': 'Ср. сут. привес (взв.2), кг',     'Значение': getTxt('sumAdg2') },
+    { 'Показатель': 'Общий прирост (от рожд.), кг',    'Значение': getTxt('sumTotal') }
+  ];
+}
+
+function exportExcelFull() {
+  if (typeof XLSX === 'undefined') return toast('Excel-библиотека не загружена — нужен интернет', 'error');
+  const rows = serialize();
+  if (!rows.length) return toast('Нет данных для экспорта', 'warn');
+
+  const wb = XLSX.utils.book_new();
+
+  const wsCurrent = XLSX.utils.json_to_sheet(rowsToExportData(rows), { header: EXPORT_HEADERS });
+  wsCurrent['!cols'] = EXPORT_COLS;
+  const rng = XLSX.utils.decode_range(wsCurrent['!ref']);
+  wsCurrent['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:rng.e.r, c:rng.e.c} })};
+  XLSX.utils.book_append_sheet(wb, wsCurrent, 'Привесы');
+
+  const wsSum = XLSX.utils.json_to_sheet(buildSummaryArray());
+  wsSum['!cols'] = [{wch:34},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsSum, 'Сводка');
+
+  const versions = getVersions();
+  const listData = versions.map((v, i) => ({
+    '№': i + 1,
+    'Название': v.name,
+    'Сохранено': formatDate(new Date(v.ts).toISOString()),
+    'Голов': v.rows.length
+  }));
+  const wsList = XLSX.utils.json_to_sheet(listData);
+  wsList['!cols'] = [{wch:4},{wch:34},{wch:18},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, wsList, 'Версии');
+
+  versions.slice(0, 10).forEach((v, i) => {
+    const sheetName = safeSheetName(`v${i+1}. ${v.name}`);
+    const ws = XLSX.utils.json_to_sheet(rowsToExportData(v.rows), { header: EXPORT_HEADERS });
+    ws['!cols'] = EXPORT_COLS;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  XLSX.writeFile(wb, `krs_единый_${fileStamp()}.xlsx`, { compression: true });
+  toast(`Excel готов: ${versions.length ? versions.length + ' версий, ' : ''}${rows.length} голов`);
+}
+
+/* =========================================================
+   CSV
+   ========================================================= */
+function exportCSV() {
+  const rows = serialize();
+  if (!rows.length) return toast('Нет данных', 'warn');
+  const headers = EXPORT_HEADERS;
+  const lines = [headers.join(';')];
+  rowsToExportData(rows).forEach(d => {
+    lines.push(headers.map(h => {
+      const v = d[h];
+      return v === null || v === undefined ? '' : String(v);
+    }).join(';'));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], {type: 'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `krs_${fileStamp()}.csv`;
+  a.click();
+  toast('CSV скачан');
+}
+
+/* =========================================================
+   ОЧИСТКА
+   ========================================================= */
+function clearAll() {
+  if (!confirm('Очистить текущую таблицу? (сохранённые версии останутся)')) return;
+  tbody.innerHTML = '';
+  updateSummary();
+  autosave();
+  updateEmptyHint();
+  toast('Таблица очищена', 'warn');
+}
+
+/* =========================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ========================================================= */
+(function init() {
+  const restored = loadAutosave();
+  if (!restored) {
+    updateSummary();
+    updateEmptyHint();
+  }
+  renderVersions();
+})();
+</script>
+</body>
+</html>
